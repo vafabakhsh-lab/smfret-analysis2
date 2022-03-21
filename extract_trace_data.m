@@ -1,10 +1,9 @@
-function [donor, acceptor, number_of_traces] ...
-    = extract_trace_data(file_name)
+function [donor, acceptor, number_of_traces] = ...
+    extract_trace_data(file_name)
 
 %{ 
 
 This function ...
-
     
     Parameters
     ----------
@@ -40,8 +39,10 @@ number_of_traces = number_of_trajectories/2;
 
 
 % report information to user
+disp(newline)
 disp(['The number of traces is: ', num2str(number_of_traces)])
 disp(['The length of each trace is: ', num2str(trace_length)])
+disp(newline)
 
 % read data and close file
 raw_data = fread(fid, number_of_trajectories * trace_length, 'int16');
@@ -63,6 +64,10 @@ for current_trace = 1:(number_of_traces)
     % extract even rows as acceptor
     acceptor(current_trace,:) = raw_data(current_trace*2,:); 
 end
+
+
+end
+
     
 
 % Suppress no terminal ; error/warning

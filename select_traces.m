@@ -13,6 +13,7 @@
     ----------
 
 %}
+
 % Suppress no terminal ; error/warning
 %#ok<*NOPTS>
 
@@ -27,13 +28,27 @@
     5. read data
     6. for each trace in data 
         a. calculate FRET
-       > b. graph trace
+        b. graph traces and iterate through
         c. ask to save or skip
     7. save trace
         a. select part of trace to save
         b. define background
         c. write data to file
     
+Current task: 
+    > generate a true set of test-data and not just something from my data
+    > need to some how make a dummy traces file? Or just extract the first
+    X traces!
+    > Why do the original traces start at 0 and mine start at time_unit?
+    > ALSO - IMPORTANT: Why 'for each trace..' loop when extracting data
+    and calculating fret? can I just do the array operation? isn't that
+    faster than a for loop?
+
+Possible things to add:
+- Column to keep keep track of the addition or subtraction of background
+- gamma correction functionality?
+- Add a '(J)ump to particle' option
+- switch file format to .csv?
 
 %}
 
@@ -43,23 +58,17 @@ close all;
 fclose('all');
 clearvars;
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Get User Input
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
 % input file directory and file name to be analyzed.
-pth=input('Directory: ', 's');
-cd(pth);
+file_directory = input('Directory: ', 's');
+cd(file_directory);
 
-% Specify how many points to average.
-sm=3;
-% Specify the Gamma factor
-gamma=1.0;
 
-gap=0:0.01:1;
-sg=size(gap);sg=sg(2);
-N_His=zeros(1,sg);
-N_His_raw=zeros(1,sg);
 
 % get the traces file name to be analyzed
 file_id = input('index # of filename [default=1]  ', 's');
@@ -69,28 +78,72 @@ end
 file_name = ['film' file_id '.traces'] 
 
 
-time_unit=input('Time unit: [default=0.06 sec] ');
+time_unit = input('Time unit: [default=0.03 sec] ');
 if isempty(time_unit)
-    time_unit=0.06;
+    time_unit = 0.03;
 end
     
     
-leakage=input('Donor leakage correction: [default=0.09] ');
+leakage = input('Donor leakage correction: [default=0.085] ');
 if isempty(leakage)
-  leakage=0.09;
+  leakage=0.085;
 end
     
-    
-bg_definition_input=input('Manually define background? y or n [default=y] ');
-if isempty(bg_definition_input)
-    bg_definition_input='y';
-end
-    
-bg_definition=1;
 
-if bg_definition_input=='n'
-    bg_definition_input=0;
+% bg_definition_input = ...
+%     input('Manually define background? y or n [default=y] ');
+
+% if isempty(bg_definition_input)
+%     bg_definition_input = 'y';
+% end
+  
+% define_bg = true;
+% 
+% if bg_definition_input == 'n'
+%     define_bg = false;
+% end
+
+bg_subtraction_input = ...
+    input('Would you like to subtract the background? y or n [default=n] ', 's');
+
+% if isempty(bg_subtraction_input)
+%     bg_definition_input = 'y';
+% end
+
+subtract_bg = false;
+
+if bg_subtraction_input == 'y'
+    subtract_bg = true;
 end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Load relevant data & files
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% load single-molecule data
+[donor, acceptor, number_of_traces] = extract_trace_data(file_name);
+
+% correct acceptor for leakage
+acceptor = acceptor - (leakage .* donor);
+
+% calculate fret
+fret = calculate_fret(donor, acceptor, number_of_traces);
+
+
+% get the length of traces
+[~, trace_length] = size(donor);
+
+% generate time array
+time = (1:trace_length) * time_unit;
+
+
+% load file image
+image_name = ['film' file_id '.tif'] 
+film_image = imread(image_name);
+
+% load peak positioins
+particle_positions = get_particle_positions(file_id);
 
 
 
@@ -99,41 +152,60 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-[donor, acceptor, number_of_traces] = extract_trace_data(file_name);
-
-[~, trace_length] = size(donor)
-
-time = (1:trace_length) * time_unit;
-
-
-
-fret = calculate_fret(donor, acceptor, leakage, number_of_traces)
-
+% iterate over all traces
+current_trace = 1;
 
 while current_trace < number_of_traces
     
-    current_trace = current_trace + 1;
+    % plot trace
+    graph_trace(time, time_unit, donor, ...
+                acceptor, fret, current_trace, file_id)
+            
+    hold on;
+    show_particle(film_image, particle_positions, current_trace)    
+    hold off;
     
-    graph_trace(time, time_unit, donor, acceptor, fret, current_trace)
+    % get user input to advance, go back, or save trace
+    option = input('(S)ave, go (B)ack, or skip (ENTER): ', 's');
     
-    % advance, go back, or save trace
-    option = input('skip (enter), (s)ave this trace, go (b)ack a trace: ', 's');
-    % validate user input
-    while ~isempty(option) && ~contains('sb', option)
+    % validate user input to check that it is empty, s, or b
+    while ~isempty(option) && ~contains('sbSB', option)
         disp(['Your input "' option '" is invalid. Please enter a valid option.']);
         option = input([newline ...
             'skip (enter), (s)ave this trace, go (b)ack a trace: '], 's');
     end
+     
     
-    if option == 'b'
-        % set index back by 2 - to account for the +1 in the loop
-        current_trace = current_trace - 2;
+    if isempty(option)
+        % go to next trace if no input
+        current_trace = current_trace + 1; 
+            
+    
+    elseif option == 'b'
+        % go back a trace
+        % check if at the first trace
+        if current_trace - 1 < 1
+            disp(newline)
+            disp('You are already at the first trace.')
+            disp(newline)
+        else
+            % set index back by 1
+            current_trace = current_trace - 1;
+        end
+    
+    
+    elseif option == 's'
+        % save a trace
+        % select part to trace to save
+        [x, donorx, acceptorx] = select_region(trace_length, time_unit);
+        
+        % save the specified region
+        save_region(...
+            x, donorx, acceptorx, donor, acceptor, ...
+            current_trace, file_id, time, subtract_bg ...
+            )
+        
+        % go to next trace
+        current_trace = current_trace + 1;
     end
-    
-    if option =='s'
-        % select part to trace
-        % select_region()
-    end
-    
-
 end

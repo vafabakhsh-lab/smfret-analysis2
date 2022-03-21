@@ -1,110 +1,200 @@
+%{ 
+
+    About
+
+    Parameters
+    ----------
+
+    Returns
+    ----------
+
+
+    Changelog
+    ----------
+
+%}
+
 % Suppress no terminal ; error/warning
 %#ok<*NOPTS>
 
+%{ 
 
+Pseudocoding
+
+1. clean workspace
+2. get user input
+3. get list of trace files
+4. declare variables
+5. for each trace file in folder
+    a. calculate FRET
+    b. calculate trace histogram
+    c. calculate XC
+    d. graph data
+    e. save or skip? (no going back)
+    f. add trace to sum of histograms
+    g. increment number of traces added (for normalization)
+6. save histogram data
+
+
+    
+Current task: 
+
+
+Possible things to add or address:
+- 'truncation' of the data to be an even multiple of the averaging window
+- create chung-kennedy filter
+- list of skipped traces for reproducibility
+- generate histogram for saved traces and for all traces
+- show particle during smoothing?
+- the output final should have clear headings
+- make sure to retain backwards compatibility with older trace formats
+
+%}
+
+
+% close any open windows and clear any variables
 close all;
 fclose('all');
-clear all;
+clearvars;
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Get User Input
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-path=input('where are the selected traces?  ', 's');
-cd(path);
-[FileName,PathName] = uigetfile('*.dat');
-cd(PathName);
-
-fret_bin=0.01; 
-gap = -0.2:fret_bin:1.2;
-temp_end=60;
-N_smooth=4;
+file_directory=input('where are the selected traces?  ', 's');
 
 timeunit=input('Time unit: [default=0.03 sec] ');
     if isempty(timeunit)
         timeunit=0.03;
     end
-    
+
 % Older scripts did not keep track of the donor/acceptor background
 % this variable will allow this script to be used to generate histograms
 % from older data
-number_columns = input(...
-    'How many columns do the trace files have (4 or  6)?  ');
-    if isempty(number_columns)
-        number_columns=6;
+
+number_of_columns = input(...
+    'How many columns do the trace files have (4, 6 or 7) [default=7]?  ');
+    if isempty(number_of_columns)
+        number_of_columns = 6;
     end
 
-sg=max(size(gap));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% get list of trace files
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+cd(file_directory);
+[FileName,PathName] = uigetfile('*.dat');
+cd(PathName);    
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% define variables
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fret_bin_size=0.01; 
+fret_bins = -0.2:fret_bin_size:1.2;
+temp_end=60;
+N_smooth=4;
+
+sg=max(size(fret_bins));
 N_His_f=zeros(1,sg);
 N_His_fs=zeros(1,sg);
 N_His_F=zeros(1,sg);
 N_His_F_gamma=zeros(1,sg);
 N_His_fret=zeros(1,sg);
 
-h1=[];h2=[];h3=[];h4=[];h5=[];
+h1=[];
+h2=[];
+h3=[];
+h4=[];
+h5=[];
 N_total_XC=zeros(1,temp_end);
 N_total_XC_old=zeros(1,temp_end);
 N_total_XC_filter=zeros(1,temp_end);
 N_total_XC_smooth=zeros(1,temp_end);
 particle_count=0;
-cr=[];u=1;
+cr=[];
+u=1;
 
-A=dir('*tr*.dat')
-numberfiles=length(A) 
+trace_list=dir('*tr*.dat')
+number_of_traces=length(trace_list) 
 
-nm=0;
 
-while (nm<numberfiles-0)
-    nm=nm+1;
-    A(nm).name;
-    fname=A(nm).name(1:end-4);
-    disp(fname)
-    fid=fopen(A(nm).name,'r');
-    if number_columns == 4
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% begin analysis
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+current_trace=0;
+
+
+while (current_trace < number_of_traces)
+    current_trace = current_trace+1;
+    
+    trace_list(current_trace).name;
+    
+    file_name = trace_list(current_trace).name(1:end-4);
+    
+    disp(file_name)
+    
+    fid = fopen(trace_list(current_trace).name,'r');
+    
+    if number_of_columns == 4
         dummy = fscanf(fid, '%g %g %g %g', [4 inf]);
-    else
+    elseif number_of_columns == 6
         dummy = fscanf(fid,'%g %g %g %g %g %g',[6 inf]);
+    elseif number_of_columns == 7
+         dummy = fscanf(fid,'%g %g %g %g %g %g %g',[7 inf]);
     end
+    
     fclose(fid);
-    dec=size(dummy);
+    dec = size(dummy);
     points = dec(2);
 
-    time=dummy(1,:)';
-    donor=+dummy(2,:)';       
-    acceptor=+dummy(3,:)';
-    donorgamma=dummy(4,:)';
+    time = dummy(1,:)';
+    donor =+ dummy(2,:)';       
+    acceptor =+ dummy(3,:)';
+    donorgamma = dummy(4,:)';
         
 
     
-    I_f_don=[];I_b_don=[];I_f_acc=[];I_b_acc=[];C=[];f=[];b=[];
-    I_f_fret=[];I_b_fret=[];
-    smooth_donor=[];smooth_acceptor=[];
+    I_f_don = [];
+    I_b_don = [];
+    I_f_acc = [];
+    I_b_acc = [];
+    C = [];
+    f = [];
+    b = [];
+    I_f_fret = [];
+    I_b_fret = [];
+    smooth_donor = [];
+    smooth_acceptor = [];
     fret=acceptor./(acceptor+donor);
-    fret_smooth=smooth(fret,N_smooth);
-    smooth_donor=smooth(donor,N_smooth);
-    smooth_acceptor=smooth(acceptor,N_smooth);
+    fret_smooth = smooth(fret,N_smooth);
+    smooth_donor = smooth(donor,N_smooth);
+    smooth_acceptor = smooth(acceptor,N_smooth);
         
-    length=max(size(donor));
-    n=[2];%2
-    M=2;%2
-    p=15;%15
+    length = max(size(donor));
+    n = [2];%2
+    M = 2;%2
+    p = 15;%15
 
-    s=0;
+    s = 0;
 
-    for N=n
-        s=s+1;
+    for N = n
+        s = s+1;
         lower_bound=max(M,N+1);
 
         for i = lower_bound:length-N
-            I_f_don(i,s)=(1/N)*sum(donor((i-N):i-1));
-            I_b_don(i,s)=(1/N)*sum(donor(i+1:i+N));
+            I_f_don(i,s) = (1/N)*sum(donor((i-N):i-1));
+            I_b_don(i,s) = (1/N)*sum(donor(i+1:i+N));
     
-            I_f_don_gamma(i,s)=(1/N)*sum(donorgamma((i-N):i-1));
-            I_b_don_gamma(i,s)=(1/N)*sum(donorgamma(i+1:i+N));
+            I_f_don_gamma(i,s) = (1/N)*sum(donorgamma((i-N):i-1));
+            I_b_don_gamma(i,s) = (1/N)*sum(donorgamma(i+1:i+N));
     
-            I_f_acc(i,s)=(1/N)*sum(acceptor((i-N):i-1));
-            I_b_acc(i,s)=(1/N)*sum(acceptor(i+1:i+N));
+            I_f_acc(i,s) = (1/N)*sum(acceptor((i-N):i-1));
+            I_b_acc(i,s) = (1/N)*sum(acceptor(i+1:i+N));
     
-            I_f_fret(i,s)=(1/N)*sum(fret((i-N):i-1));
-            I_b_fret(i,s)=(1/N)*sum(fret(i+1:i+N));
+            I_f_fret(i,s) = (1/N)*sum(fret((i-N):i-1));
+            I_b_fret(i,s) = (1/N)*sum(fret(i+1:i+N));
         
         end
 
@@ -139,19 +229,22 @@ while (nm<numberfiles-0)
 
     %%
     % $x^2+e^{\pi i}$
-    f=bsxfun(@times,C,f);  ffret=bsxfun(@times,Cf,ffret);
-    b=bsxfun(@times,C,b);  bfret=bsxfun(@times,Cf,bfret);
+    f = bsxfun(@times, C, f);  
+    ffret = bsxfun(@times, Cf, ffret);
+    b = bsxfun(@times, C, b);  
+    bfret = bsxfun(@times, Cf, bfret);
 
-    Cgamma=(1./sum(fgamma+bgamma,2));     
-    fgamma=bsxfun(@times,Cgamma,fgamma);  
-    bgamma=bsxfun(@times,Cgamma,bgamma);  
+    Cgamma = (1./sum(fgamma+bgamma,2));     
+    fgamma = bsxfun(@times,Cgamma,fgamma);  
+    bgamma = bsxfun(@times,Cgamma,bgamma);  
 
-    range=max(size(f));
-    I_d_filter=0;I_a_filter=0;
-    I_d_gamma_filter=0;
-    fret_filter=0;
+    range = max(size(f));
+    I_d_filter = 0;
+    I_a_filter = 0;
+    I_d_gamma_filter = 0;
+    fret_filter = 0;
 
-    for k=1:s
+    for k = 1:s
         I_d_filter= I_d_filter + f(1:range,k).* I_f_don(1:range,k) + b(1:range,k).*I_b_don(1:range,k);
         I_a_filter= I_a_filter + f(1:range,k).* I_f_acc(1:range,k) + b(1:range,k).*I_b_acc(1:range,k);
         I_d_gamma_filter= I_d_gamma_filter + fgamma(1:range,k).* I_f_don_gamma(1:range,k) + bgamma(1:range,k).*I_b_don_gamma(1:range,k);
@@ -173,11 +266,11 @@ while (nm<numberfiles-0)
         end
     end
 
-    [n_f,~]=hist(fret,gap);          
-    [n_fs,~]=hist(fret_smooth,gap);  
-    [n_F,~]=hist(FRET_filter,gap);  
-    [n_F_gamma,~]=hist(FRET_filter_gamma,gap);  
-    [n_fret,x]=hist(fret_filter,gap);  
+    [n_f,~]=hist(fret,fret_bins);          
+    [n_fs,~]=hist(fret_smooth,fret_bins);  
+    [n_F,~]=hist(FRET_filter,fret_bins);  
+    [n_F_gamma,~]=hist(FRET_filter_gamma,fret_bins);  
+    [n_fret,x]=hist(fret_filter,fret_bins);  
     % plot(x,n_F/sum(n_F),'r');hold on
 
         Ave_donor=mean(donor);        Ave_donor_filter=nanmean(I_d_filter);
@@ -230,7 +323,7 @@ while (nm<numberfiles-0)
             patchline(time(1:range),I_a_filter(1:range), 'linewidth',1.5,'edgecolor','r');hold on;
             patchline(time,150+donor+acceptor,'edgecolor','k','edgealpha',0.4);hold on;
             patchline(time(1:range),150+I_a_filter(1:range)+I_d_filter(1:range), 'linewidth',1.5,'edgecolor','k');
-            title(['File: ' fname '   Molecule:' int2str(nm)]);
+            title(['File: ' file_name '   Molecule:' int2str(current_trace)]);
             ylim([0 20+max(150+I_a_filter(1:range)+I_d_filter(1:range))]);
             xlim([min(time) max(time)]);
             grid on; zoom on;
@@ -245,11 +338,11 @@ while (nm<numberfiles-0)
 
             [~, indexAtMaxY] = max(n_f/sum(n_f));
             h3=subplot(5,2,[7,9]);
-            plot(gap,n_f/sum(n_f),'*'); hold on;hold on;
+            plot(fret_bins,n_f/sum(n_f),'*'); hold on;hold on;
             h4=subplot(5,2,[7,9]);
-            plot(gap,N_His_f./sum(N_His_f),'r');
+            plot(fret_bins,N_His_f./sum(N_His_f),'r');
             xlim([-0.02 1.02]);
-            legend(sprintf('Peak Center = %0.3f',gap(indexAtMaxY(1))));
+            legend(sprintf('Peak Center = %0.3f',fret_bins(indexAtMaxY(1))));
 
             h5=subplot(5,2,[8,10]);
             cla(h5);
@@ -291,6 +384,11 @@ while (nm<numberfiles-0)
         end
 end
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% normalize histograms
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % Normalize data by particle counts
 N_total_XC = N_total_XC/particle_count;
 N_total_XC_old = N_total_XC_old/particle_count;
@@ -302,9 +400,16 @@ N_His_fret = N_His_fret/particle_count;
 N_His_F = N_His_F/particle_count;
 N_His_F_gamma = N_His_F_gamma/particle_count;
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% save files
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 %%%%%        TIME                     No filter                  old normalization              filtered data  
-output=[timeunit*(0:temp_end-1)' (N_total_XC)' (N_total_XC_old)' (N_total_XC_filter)'];
-time_fname=['total_XC.dat'];
+output = [timeunit*(0:temp_end-1)' (N_total_XC)' (N_total_XC_old)' (N_total_XC_filter)'];
+time_fname = ['total_XC.dat'];
 save(time_fname,'output','-ascii') ;
 
 %xcHeaders = {"TIME", "NoFilter", "OldNorm", "FilteredData"};
@@ -312,8 +417,8 @@ save(time_fname,'output','-ascii') ;
 csvwrite('total_XC.csv', output);
 
 %%%%% TIME  raw data  smoothed fret  filtered fret   filtered_donor/filtered _acceptor 
-output=[x' , N_His_f' N_His_fs' N_His_fret' N_His_F' N_His_F_gamma'];
-time_fname=['total_FRET.dat'];
+output = [x' , N_His_f' N_His_fs' N_His_fret' N_His_F' N_His_F_gamma'];
+time_fname = ['total_FRET.dat'];
 save(time_fname,'output','-ascii') ;
 
 %fretHeaders = {"FRET", "Raw", "Smoothed", "Filtered", "FilteredD.A", "gamma"} ;
@@ -326,11 +431,4 @@ csvwrite('total_FRET.csv', output);
 
 
 
-
-%%%% ChangeLog %%%%
-% 4/2/2019 Michael Schamber
-% Changed plotting windows to give extra panel to XC and changed limits so
-% the XC plot is more visible. This required making the FRET trace plot a
-% little thinner so that it fits. The FRET histogram plot remains the same
-% size.
 
