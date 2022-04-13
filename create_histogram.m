@@ -48,6 +48,9 @@ Possible things to add or address:
 - show particle during smoothing?
 - the output final should have clear headings
 - make sure to retain backwards compatibility with older trace formats
+- make the read in better: 
+        e.g. trace_data with columns titled time, donor, acceptor
+
 
 %}
 
@@ -390,15 +393,15 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Normalize data by particle counts
-N_total_XC = N_total_XC/particle_count;
-N_total_XC_old = N_total_XC_old/particle_count;
-N_total_XC_filter = N_total_XC_filter/particle_count;
+N_total_XC = N_total_XC / particle_count;
+N_total_XC_old = N_total_XC_old / particle_count;
+N_total_XC_filter = N_total_XC_filter / particle_count;
 
-N_His_f = N_His_f/particle_count;
-N_His_fs = N_His_fs/particle_count;
-N_His_fret = N_His_fret/particle_count;
-N_His_F = N_His_F/particle_count;
-N_His_F_gamma = N_His_F_gamma/particle_count;
+N_His_f = N_His_f / particle_count;
+N_His_fs = N_His_fs / particle_count;
+N_His_fret = N_His_fret / particle_count;
+N_His_F = N_His_F / particle_count;
+N_His_F_gamma = N_His_F_gamma / particle_count;
 
 
 

@@ -50,6 +50,10 @@ Possible things to add:
 - Add a '(J)ump to particle' option
 - switch file format to .csv?
 
+- Rework the structure of the function so that in the loop you 'extract'
+the donor, acceptor, and FRET into a current_particle table. This makes it
+easier to introduce gamma correction or other functinoality that needs to
+work on a specific trace rather than the entire acceptor data
 %}
 
 
@@ -127,7 +131,7 @@ end
 % correct acceptor for leakage
 acceptor = acceptor - (leakage .* donor);
 
-% calculate fret
+% calculate fret for all traces
 fret = calculate_fret(donor, acceptor, number_of_traces);
 
 

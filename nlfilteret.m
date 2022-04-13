@@ -10,15 +10,17 @@ fluorescence trajectories of folding proteins“, Chemical Physics, 307,
    
     Parameters
     ----------
-r -
-f1 -
-f2 -
-length -
+r - is the donor and acceptor intensities (a trace)
+f1 - seems to be p
+f2 - seems to be M
+length - is the array of window lengths
     
     
     Variables
     ----------
-    
+g = number of windows
+i = index for window length
+le = length of window that changes
 
     Returns
     -----------
@@ -27,50 +29,10 @@ length -
 
 %}
 
-%{
 
-Sample implementation for MASH-FRET
-
-        case 2 % Haran filter
-            FRET = p.proj{proj}.FRET;
-            exc = p.proj{proj}.excitations;
-            chanExc = p.proj{proj}.chanExc;
-            for l = 1:nExc
-                for c = 1:nC
-
-                    Ia = I_corr(:,c,l);
-                    Ib = I_corr(:,c,l);
-
-                    if ~isempty(FRET)
-                        [row,col,o] = find((FRET(:,1)==c | FRET(:,2)==c));
-                        if ~isempty(row)
-                            [o,l_c,o] = find(exc==chanExc(FRET(row,1)));
-                            if ~isempty(l_c) && l == l_c
-                                if col(1) == 1
-                                    Ia = I_corr(:,c,l);
-                                    Ib = I_corr(:,FRET(row,2),l);
-                                else
-                                    Ia = I_corr(:,c,l);
-                                    Ib = I_corr(:,FRET(row,1),l);
-                                end
-                            end
-                        end
-                    end
-
-                    Ia_mean = mean(Ia);
-                    Ib_mean = mean(Ib);
-                    r.a = Ia/Ia_mean;
-                    r.b = Ib/Ib_mean;
-
-                    [r_nlf] = nlfilteret(r,prm{2}(meth,1),prm{2}(meth,2),...
-                        [1 2 3 4]*prm{2}(meth,3));
-                    I_den(:,c,l) = r_nlf.a * Ia_mean;
-                end
-            end
-
-%}
 function d = nlfilteret(r, f1, f2, length)
-    g = size(length,2); % 4
+
+    g = size(length,2); % 4 - gets # of windows
     n = size(r.a,1); % number of frames
     d.a = zeros(n,1);
     d.b = zeros(n,1);
@@ -99,6 +61,7 @@ for i = 1:g % 1:4
     averageb = zeros(n-le,1);
     
     % Copy values into a new array, divide by window size
+    % Yes, but y tho?
     for j = 2:(le+1)
         a = r.a(j:(n-le+j-1));
         b = r.b(j:(n-le+j-1));
@@ -113,6 +76,9 @@ for i = 1:g % 1:4
     rb.b{i}(1:(n-le-1)) = averageb(1:(n-le-1));
     %SK: Time trace b, forward values
     rb.f{i}((1+le+1):n) = averageb(1:(n-le-1));
+    % here we go, a and b correspond to different time traces
+    % so most likely donor (ra) and acceptor (rb)
+    %
     
    % calculate the weights for each predictor (equations 4,5 in Chung and 
    % Kennedy)
