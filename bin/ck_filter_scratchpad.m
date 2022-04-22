@@ -10,6 +10,9 @@ Steps:
 4. return filtered data
 
 
+current task / to-do:
+
+
 %}
 
 % declare variables
@@ -43,8 +46,19 @@ for current_time = starting_time:ending_time
     
     rev_predictor(current_time) = ...
        mean(NoisyTrace(current_time + 1 : current_time + window)) ;
+   
+    f_weight = [];
+    b_weight = [];
         
-
+    predicted_x(current_time) = ...
+        f_weight(current_time)*f_predict(current_time) + ...
+        b_weight(current_time)*b_predict(current_time);
+    
+    % f(k) and b(k) are the weights
+    % and f(k) + b(k) == 1;
+    
+    
+    
 end
 
 

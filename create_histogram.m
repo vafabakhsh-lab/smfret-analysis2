@@ -67,19 +67,19 @@ clearvars;
 file_directory=input('where are the selected traces?  ', 's');
 
 timeunit=input('Time unit: [default=0.03 sec] ');
-    if isempty(timeunit)
-        timeunit=0.03;
-    end
+if isempty(timeunit)
+    timeunit=0.03;
+end
 
 % Older scripts did not keep track of the donor/acceptor background
 % this variable will allow this script to be used to generate histograms
 % from older data
 
 number_of_columns = input(...
-    'How many columns do the trace files have (4, 6 or 7) [default=7]?  ');
-    if isempty(number_of_columns)
-        number_of_columns = 6;
-    end
+    'How many columns do the trace files have (4, 6 or 7) [default=6]?  ');
+if isempty(number_of_columns)
+    number_of_columns = 6;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get list of trace files
@@ -184,7 +184,9 @@ while (current_trace < number_of_traces)
 
     for N = n
         s = s+1;
-        lower_bound=max(M,N+1);
+        lower_bound = max(M,N+1); % create lower bound
+        % it prevents trying to start predicting too soon into the trace
+        % which would generate index errors e.g. donor_intensity(-3)
 
         for i = lower_bound:length-N
             I_f_don(i,s) = (1/N)*sum(donor((i-N):i-1));
@@ -202,14 +204,14 @@ while (current_trace < number_of_traces)
         end
 
 
-        for i = lower_bound:length-M-N+1
+        for i = lower_bound:length-M-N+1 % iterate over data points
         f(i,s)=0;
         b(i,s)=0;
         fgamma(i,s)=0;
         bgamma(i,s)=0;
         ffret(i,s)=0;
         bfret(i,s)=0;
-            for j=0:M-1
+            for j=0:M-1 % equation 4,5
                 j;
                 f(i,s)=f(i,s)+((donor(i-j)-I_f_don((i-j),s))^2+(acceptor(i-j)-I_f_acc((i-j),s))^2);
                 b(i,s)=b(i,s)+((donor(i+j)-I_b_don((i+j),s))^2+(acceptor(i+j)-I_b_acc((i+j),s))^2); 
@@ -220,14 +222,18 @@ while (current_trace < number_of_traces)
                 ffret(i,s)=ffret(i,s)+((fret(i-j)-I_f_fret((i-j),s))^2);  % filter the raw fret directly.
                 bfret(i,s)=bfret(i,s)+((fret(i+j)-I_b_fret((i+j),s))^2);
             end
-        f(i,s)=f(i,s)^(-p); b(i,s)=b(i,s)^(-p);
-        fgamma(i,s)=fgamma(i,s)^(-p); bgamma(i,s)=bgamma(i,s)^(-p);
-        ffret(i,s)=ffret(i,s)^(-p); bfret(i,s)=bfret(i,s)^(-p);
+        f(i,s)=f(i,s)^(-p); 
+        b(i,s)=b(i,s)^(-p);
+        fgamma(i,s)=fgamma(i,s)^(-p);
+        bgamma(i,s)=bgamma(i,s)^(-p);
+        ffret(i,s)=ffret(i,s)^(-p);
+        bfret(i,s)=bfret(i,s)^(-p);
 
         end
     end
 
-    C=(1./sum(f+b,2));     Cf=(1./sum(ffret+bfret,2));
+    C  = (1./sum(f+b,2)); 
+    Cf = (1./sum(ffret+bfret,2));
 
 
     %%

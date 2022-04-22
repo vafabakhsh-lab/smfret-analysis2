@@ -54,6 +54,10 @@ Possible things to add:
 the donor, acceptor, and FRET into a current_particle table. This makes it
 easier to introduce gamma correction or other functinoality that needs to
 work on a specific trace rather than the entire acceptor data
+
+
+- Check and make sure that the show particle isn't constantly opening the
+image and is instead just displaying a different part of the same image.
 %}
 
 

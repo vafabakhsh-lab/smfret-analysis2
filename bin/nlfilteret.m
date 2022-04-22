@@ -49,10 +49,10 @@ for i = 1:g % 1:4
     ra.f{i} = zeros(n,1);
     rb.b{i} = zeros(n,1);
     rb.f{i} = zeros(n,1);
-    w.b{i} = zeros(n,1);
-    w.f{i} = zeros(n,1);
-    double(w.b{i});
-    double(w.f{i});
+    weights.b{i} = zeros(n,1);
+    weights.f{i} = zeros(n,1);
+    double(weights.b{i});
+    double(weights.f{i});
     
     % calculate averaged trajectories (equations on page 73 of Chung and 
     % Kennedy)
@@ -106,23 +106,23 @@ for i = 1:g % 1:4
             average.f(k) = 1;
         end
     end
-    w.b{i}(1:(n-f2)) = 1./((average.b(1:(n-f2))).^f1);
+    weights.b{i}(1:(n-f2)) = 1./((average.b(1:(n-f2))).^f1);
 
-    w.f{i}((f2+1):n) = 1./((average.f(1:(n-f2))).^f1);
+    weights.f{i}((f2+1):n) = 1./((average.f(1:(n-f2))).^f1);
 
 
     % calculate normalization constant for weights
-    sum = sum + w.b{i} + w.f{i};
+    sum = sum + weights.b{i} + weights.f{i};
     
     % need to make sure no division by zero! need to introduce pi weights!
 end
 
 % normalize all weights and generate new data sets
 for i = 1:g % 1:4
-    w.b{i} = w.b{i}./sum;
-    w.f{i} = w.f{i}./sum;
-    d.a = d.a + w.f{i}.*ra.f{i} + w.b{i}.*ra.b{i};
-    d.b = d.b + w.f{i}.*rb.f{i} + w.b{i}.*rb.b{i};
+    weights.b{i} = weights.b{i}./sum;
+    weights.f{i} = weights.f{i}./sum;
+    d.a = d.a + weights.f{i}.*ra.f{i} + weights.b{i}.*ra.b{i};
+    d.b = d.b + weights.f{i}.*rb.f{i} + weights.b{i}.*rb.b{i};
 end
 
 % remove infinities
