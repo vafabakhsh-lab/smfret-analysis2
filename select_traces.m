@@ -78,7 +78,7 @@ cd(file_directory);
 
 
 
-% get the traces file name to be analyzed
+% get the name of the .traces file to be analyzed
 file_id = input('index # of filename [default=1]  ', 's');
 if isempty(file_id)
     file_id='1';
@@ -188,9 +188,7 @@ while current_trace < number_of_traces
         % go to next trace if no input
         current_trace = current_trace + 1; 
             
-    
-    elseif option == 'b'
-        % go back a trace
+    elseif option == 'b' % go back a trace
         % check if at the first trace
         if current_trace - 1 < 1
             disp(newline)
