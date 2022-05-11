@@ -55,6 +55,7 @@ the donor, acceptor, and FRET into a current_particle table. This makes it
 easier to introduce gamma correction or other functinoality that needs to
 work on a specific trace rather than the entire acceptor data
 
+- MANUAL BACKGROUND SELECTION 
 
 - Check and make sure that the show particle isn't constantly opening the
 image and is instead just displaying a different part of the same image.
@@ -67,9 +68,9 @@ fclose('all');
 clearvars;
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Get User Input
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%
+% Get User Input %
+%%%%%%%%%%%%%%%%%%
 
 
 % input file directory and file name to be analyzed.
@@ -125,9 +126,9 @@ if bg_subtraction_input == 'y'
 end
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Load relevant data & files
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Load relevant data & files %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % load single-molecule data
 [donor, acceptor, number_of_traces] = extract_trace_data(file_name);
@@ -155,9 +156,9 @@ particle_positions = get_particle_positions(file_id);
 
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Begin analysis
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%
+% Begin analysis %
+%%%%%%%%%%%%%%%%%%
 
 
 % iterate over all traces

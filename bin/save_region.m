@@ -26,23 +26,35 @@ from the select-region function.
     
 %}
 
-    
-    
+
 % calculate the length of the region to be saved    
 region_length = x(2) - x(1) + 1;
     
 % generate file name
-file_name = [file_id ' tr' num2str(current_trace-1) '.dat'];
+file_name = [file_id ' tr' num2str(current_trace - 1) '.dat'];
 % current_trace - 1 is to correct for the indexing difference between
 % matlab (starts at 1) and smCamera (starts at 0)
 
 
 % calculate mean donor and acceptor background    
-mean_donor_background = mean( ...
-    donor(current_trace, donorx(1):donorx(2)) );
 
-mean_acceptor_background = mean( ...
-    acceptor(current_trace, acceptorx(1):acceptorx(2)) );
+if donorx(1) > donorx(2)
+    % get manual input
+    mean_donor_background = input('Please enter donor background: ');
+else
+    mean_donor_background = mean( ...
+        donor(current_trace, donorx(1):donorx(2)) );
+end
+
+if donorx(1) > donorx(2)
+    % get manual input
+    mean_acceptor_background = input('Please enter acceptor background: ');
+else
+    mean_acceptor_background = mean( ...
+        acceptor(current_trace, acceptorx(1):acceptorx(2)) );
+end
+
+
 
 
 % generate array of background values for saving in the trace file
