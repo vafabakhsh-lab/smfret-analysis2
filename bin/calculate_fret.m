@@ -38,6 +38,8 @@ for current_trace = 1:number_of_traces
     % correct any Inf fret values caused by acceptor + donor = 0
     fret(isinf(fret)) = 0;
     
-end    
+end
+
+end
     
     

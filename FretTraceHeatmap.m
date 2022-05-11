@@ -14,6 +14,10 @@ numberfiles=length(A);
 
 max_length = 0;
 
+% change this to use the import_options method
+% import_options = detectImportOptions(file_name);
+% 
+% tracking_data = readtable(file_name, import_options);
 for file_index = 1:numberfiles
     
     A(file_index).name;
