@@ -7,12 +7,12 @@ test-data from: 20201210MRS_mCaSR_D451TAG
 smfret-analysis2 needs to be added to matlabs path to fully function
 
 To do this go to matlabs 'HOME' tab shown below
-![image of home tab of matlab](./home-tab.png)
+![image of home tab of matlab](./img/home-tab.png)
 
 From this menu, select the 'Set Path' button in the ENVIRONMENT section.
 
 It will open a new window shown below
-![subfolder add menu](./add-subfolder.png)
+![subfolder add menu](./img/add-subfolder.png)
 
 Select 'Add with Subfolders...' and navigate to the smfret-analysis2 folder and click select folder.
 
