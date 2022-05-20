@@ -3,28 +3,62 @@ function [donor, acceptor, number_of_traces] = ...
 
 %{ 
 
-This function ...
+This function reads the data from a film.traces file and will return the
+donor and acceptor data for all particles in the traces file as well as the
+number of particles/traces in the movie.
     
     Parameters
     ----------
-    file_name = 
+    
+    file_name:
+    file_name of the *.traces file to be analyzed    
+    
+     
+    Returns
+    -----------
+    
+    donor:
+    N x D array of donor intensity data where N is the number of traces in
+    the .traces file and D is the length of the movie
+
+    acceptor:
+    N x D array of acceptor intensity data where N is the number of traces
+    in the .traces file and D is the length in the movie
+ 
+
+    number_of_traces:
+    integer number representing the number of trajectories in a .traces
+    file 
     
     
     Variables
     ----------
     
+    fid:
+    file handler matlab uses to read the data
+    
+    number_of_trajectories:
+    combined number of acceptor and donor traces because each trace has two
+    trajectories 
+    
+    number_of_traces:
+    number of particles in the *.traces file
+    
+    raw_data:
+    N*2 x D array of data where N is the number of traces, D is the length
+    of the movie, the odd rows are donor intensity values, and even rows 
+    are acceptor intensity values
+    
 
-    Returns
+    Changelog
     -----------
-    donor
-    acceptor
     
     
 %}
 
+    
 % open file
 fid = fopen(file_name,'r');
-
 
 % get the length of traces
 trace_length = fread(fid, 1, 'int32');
@@ -35,7 +69,6 @@ number_of_trajectories = fread(fid, 1, 'int16');
 % divide number of trajectories by 2 to obtain the number of
 % traces/particles (each trace has 2 trajectories: donor and acceptor)
 number_of_traces = number_of_trajectories/2;
-
 
 
 % report information to user
@@ -53,8 +86,7 @@ donor = zeros(number_of_traces, trace_length);
 acceptor = zeros(number_of_traces, trace_length);
 
 
-
-% transform raw_data from 1-D array to an M x N array
+% transform raw_data from 1-D array to an N x D array
 raw_data = reshape(raw_data, [number_of_trajectories, trace_length]);
 
 

@@ -11,17 +11,87 @@ from the select-region function.
     
     Parameters
     ----------
-    file_name = 
+    
+    x:
+    two element array of integers that represent x-axis co-ordinates (time
+    points) that represent the region of the trace to be saved
+    
+    donorx:
+    two element array of integers that represent x-axis co-ordinates (time
+    points) that represent the region of the trace to be used for
+    calculating donor background
+    
+    acceptorx:
+    two element array of integers that represent x-axis co-ordinates (time
+    points) that represent the region of the trace to be used for
+    calculating acceptor background
+    
+    donor:
+    N x D array of donor intensity data where N is the number of traces in
+    the .traces file and D is the length of the movie
+
+    acceptor:
+    N x D array of acceptor intensity data where N is the number of traces
+    in the .traces file and D is the length in the movie
+    
+    current_trace:
+    intiger index used to iterate over the rows of donor and acceptor for
+    calculating fret
+     
+    file_id:
+    integer number corresponding to the film number being analyzed
+    
+    time:
+    1-D array of floats corresponding to the time-axis of the trace
+    
+    subtract_bg:
+    logical true or false statement to determine if background is to be
+    subtracted from donor and acceptor values
+
+  
+    
+    Returns
+    -----------    
+    
+    output:
+    *.dat file that contains time, donor, acceptor, donor background,
+    acceptor background, and background subtraction status for the selected
+    region and this file is used to for generating histograms later
     
     
     Variables
     ----------
     
-
-    Returns
-    -----------
-    donor
-    acceptor
+    region_length:
+    number of data points in the region
+    
+    file_name:
+    is the name of the file that will be created
+    
+    mean_donor_background:
+    mean value calculated from donorx or entered manually
+    
+    mean_acceptor_background:
+    mean value calculated from acceptorx or entered manually
+    
+    bg_donor:
+    1-D array that containts mean donor background repeated region_length
+    times
+    
+    bg_acceptor:
+    1-D array that containts mean acceptor background repeated 
+    region_length times
+    
+    selected_donor:
+    donor intensity values from the region to be saved
+    
+    selected_acceptor:
+    donor intensity values from the region to be saved
+    
+    bg_status:
+    numerical true/false logical value that keeps track of whether
+    background subtraction has occured
+    
     
     
 %}
@@ -55,8 +125,6 @@ else
 end
 
 
-
-
 % generate array of background values for saving in the trace file
 bg_donor = repmat(mean_donor_background, region_length, 1);
 bg_acceptor = repmat(mean_acceptor_background, region_length, 1);
@@ -77,8 +145,6 @@ end
     
 % generate
 bg_status = repmat(subtract_bg, region_length, 1);
-%zeros(region_length, 1);
-
 
 
 output = [...

@@ -2,15 +2,14 @@
 clear;
 close all;
 
-path=input('where are the selected traces?  ', 's');
-cd(path);
-[FileName,PathName] = uigetfile('*.dat');
-cd(PathName);
+
+[file, directory] = uigetfile('*.dat');
+cd(directory);
 
 
       
-A=dir('*tr*.dat');
-numberfiles=length(A);
+trace_list = dir('*tr*.dat');
+numberfiles = length(trace_list);
 
 max_length = 0;
 
@@ -18,14 +17,16 @@ max_length = 0;
 % import_options = detectImportOptions(file_name);
 % 
 % tracking_data = readtable(file_name, import_options);
+
+% determine the longest trace in the folder 
 for file_index = 1:numberfiles
     
-    A(file_index).name;
-    fname=A(file_index).name(1:end-4);
-    fid=fopen(A(file_index).name,'r');
-    TraceFile = fscanf(fid,'%g %g %g %g %g %g',[6 inf]);
+    
+    fname = trace_list(file_index).name(1:end-4);
+    fid = fopen(trace_list(file_index).name,'r');
+    trace_data = fscanf(fid,'%g %g %g %g %g %g',[6 inf]);
     fclose(fid);
-    trace_size = size(TraceFile);
+    trace_size = size(trace_data);
     trace_length = trace_size(2);
     
     if trace_length > max_length
@@ -35,27 +36,31 @@ for file_index = 1:numberfiles
     end 
 end
 
+% create an empty array that can accomodate the largest trace
+% this overcomes the limitation of joining unequal length traces together
+% so that you can just plat one entire trace per row in the heatmap
 fret_traces = NaN(max_length, numberfiles);
 fret_and_time = NaN(max_length + 1, numberfiles);
 
+% concatenate all individual fret trajectories into one array
 for file_index = 1:numberfiles
    
-    A(file_index).name;
-    fname=A(file_index).name(1:end-4);
-    fid=fopen(A(file_index).name,'r');
-    TraceFile = fscanf(fid,'%g %g %g %g %g %g',[6 inf]);
+    
+    fname = trace_list(file_index).name(1:end-4);
+    fid=fopen(trace_list(file_index).name,'r');
+    trace_data = fscanf(fid,'%g %g %g %g %g %g',[6 inf]);
     fclose(fid);
-    trace_size = size(TraceFile);
+    trace_size = size(trace_data);
     trace_length = trace_size(2);
 
-    donor=+TraceFile(2,:)';       
-    acceptor=+TraceFile(3,:)';
+    donor=+trace_data(2,:)';       
+    acceptor=+trace_data(3,:)';
     fret=acceptor./(donor+acceptor); 
 
     fret_traces(1:trace_length, file_index) = ...
         fret;
 
-    
+    % gets fret trajectory and trace length
     fret_and_time(1:trace_length + 1, file_index) = ...
         [trace_length; fret];
 
@@ -68,12 +73,13 @@ end
 fret_traces = fret_traces'; % Transposes RawFret
 fret_and_time = fret_and_time';
 
+% calculate and sort traces by mean fret 
 meanfret = mean(fret_traces, 2, 'omitnan'); % calculates mean of RawFret by row (2)
 fret_b = [fret_traces meanfret]; % appends MeanFret to the end of RawFret
 [~,idx1] = sort(fret_b(:,end)); % sorts the ids of F2 by the last column (MeanFret)
 fret_sorted = fret_b(idx1,:); % Rearrange F2 by the sorted ids (idx1)
 
-
+% sort traces by length
 [~,idx1] = sort(fret_and_time(1:end,1));
 fret_time_sorted = fret_and_time(idx1,:);
 fret_time_sorted = fret_time_sorted(1:end,2:end);

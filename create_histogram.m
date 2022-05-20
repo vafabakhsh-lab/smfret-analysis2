@@ -2,12 +2,123 @@
 
     About
 
-    Parameters
-    ----------
+    Parameters & Variables
+    ----------------------
+
+    trace_list:
+    a list of the trace files in the target directory
+
+    number_of_traces:
+    integer number of all files following the *tr*.dat naming format of
+    trace files
+
+    bin_size:    
+    the size of the bins used when calculating fret histograms
+        
+    fret_bins:
+    1-D array consisting of bin centers
+    
+    number_bins:
+    number of elements in the fret_bins array
+    
+    max_cc_lag:
+    the maximum number of data points away used to calculate the
+    correlation between donor and acceptor
+
+    smoothing_window:
+    integer number of time points for a moving average used to smooth data
+
+    N_His_f:
+    cummulative fret histogram generated from the raw fret trajectory for
+    all traces saved
+
+    N_His_fs:
+    cummulative fret histogram generated from the smoothed fret trajectory
+    for all traces saved
+
+    N_His_F:
+    deprecated and no longer used
+
+    N_His_F_gamma:
+    ???
+
+    N_His_fret:
+    deprecated and no longer used
+    
+    N_total_XC:
+    cummulative cross-correlation data for all traces saved
+
+    N_total_XC_old:
+    deprecated and no longer used
+
+    N_total_XC_smooth:
+    deprecated and no longer used
+    
+    skipped_traces:
+    cell array to store the name of skipped traces
+
+    skip_count:
+    integer count of how many traces were skipped - used for indexing the
+    trace name into skipped_traces
+    
+    particle_count:
+    count of how many particles were saved and is used for normalizing the
+    data before saving
+    
+    current_trace:
+    integer representing the index of the current trace file being worked
+    on and is used to get the specific trace-file name to load
+
+    trace_data:
+    multi-dimensional array generated from a single trace file - the number
+    of columns can vary but the first three should be time, donor, acceptor
+    
+    trace_length:
+    the number of time points in the current trace_data
+
+    number_of_columns:
+    the number of columns in the current trace_data 
+
+    tau:
+
+    
+    d_X_a:
+
 
 
     Returns
-    ----------
+    -------
+
+    total_fret.csv/.dat:
+    csv and dat format of the normalized histogram data for the traces
+    saved from a film
+
+        data columns in the file:
+            fret: fret bins
+
+            raw: histogram generated from raw fret data
+
+            smoothed: histogram generated from fret data passed through a
+            moving average
+
+            filtered-fret: histogram generated from fret data passed
+            through a non-linear filter
+
+            filtered-d.a: histogram generated from fret data where the
+            donor and acceptor values were passed through a non-linear
+            filter
+       
+
+    total_xc.csv/.dat:
+    csv and dat format of the cross-correlation data for the traces saved
+    from a film
+
+        data columns in the file:
+            delta-time: the lag time expressed in data-points (aka tau)
+
+            cross-correlation: data from the unfiltered fret normalized by 
+            a newer method of (avg_donor + avg_acceptor)
+
 
 
     Changelog
@@ -25,25 +136,7 @@
 %#ok<*HIST>
 
 %{ 
-
-Pseudocoding
-
-1. clean workspace
-2. get user input
-3. get list of trace files
-4. declare variables
-5. for each trace file in folder
-    a. calculate FRET
-    b. calculate trace histogram
-    c. calculate XC
-    d. graph data
-    e. save or skip? (no going back)
-    f. add trace to sum of histograms
-    g. increment number of traces added (for normalization)
-6. save histogram data
-
-
-    
+   
 Current task: 
 
 
@@ -75,7 +168,7 @@ clearvars;
 [FileName,PathName] = uigetfile('*.dat');
 cd(PathName);    
 
-trace_list=dir('*tr*.dat')
+trace_list = dir('*tr*.dat')
 
 number_of_traces = length(trace_list)
 
@@ -86,7 +179,7 @@ number_of_traces = length(trace_list)
 
 timeunit = input('Time unit: [default=0.03 sec] ');
 if isempty(timeunit)
-    timeunit=0.03;
+    timeunit = 0.03;
 end
 
 
@@ -127,7 +220,10 @@ particle_count = 0; % count of how many particles were saved
 
 for current_trace = 1:number_of_traces
 
-    trace_list(current_trace).name;
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%
+    % load trace file data %
+    %%%%%%%%%%%%%%%%%%%%%%%%
     
     file_name = trace_list(current_trace).name;
     disp(file_name)
@@ -154,27 +250,29 @@ for current_trace = 1:number_of_traces
     % insert non-linear filter function here once created
     % [filtered_donor, filtered_acceptor] = nl_filter(donor, acceptor);
     
-    % calculate fret
-    fret = acceptor ./ (acceptor+donor);
-    smooth_fret = smooth_acceptor ./ (smooth_acceptor + smooth_donor);
-
     
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % generate FRET histogram %
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % calculate fret and generate histogram for a trace%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+  
+    fret = acceptor ./ (acceptor + donor);
+    smooth_fret = smooth_acceptor ./ (smooth_acceptor + smooth_donor);
+    % note: the . before a mathematical operator tells matlab it is an
+    % element-by-element calculation and not something else
+    
+
 
     [n_f, bins] = hist(fret, fret_bins);           
-    [n_fs,~] = hist(smooth_fret, fret_bins); 
+    [n_fs, ~] = hist(smooth_fret, fret_bins); 
     
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % calculate cross-correlation %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    
-    if trace_length > max_cc_lag %
-        [d_X_a_old, d_X_a, d_X_a_smooth] = ...
-            calculate_cross_corr( donor, acceptor, ...
-                                  smooth_donor, smooth_acceptor );
+    if trace_length > max_cc_lag 
+        [d_X_a] = calculate_cross_corr(donor, acceptor);
     end
 
 
@@ -204,8 +302,7 @@ for current_trace = 1:number_of_traces
     patchline(time, smooth_acceptor, ...
         'linewidth',1.5, ...
         'edgecolor','r');
-    patchline(time, ...
-        total_intensity + 150, ...
+    patchline(time, total_intensity + 150, ...
         'edgecolor','k', ...
         'edgealpha',0.4);
     patchline(time, smooth_total_intensity + 150, ...
@@ -237,13 +334,13 @@ for current_trace = 1:number_of_traces
     h3 = subplot(5, 2, [7, 9]);
     % get index of most common fret value
     [~, max_fret_index] = max(n_f / sum(n_f)); 
-    plot(fret_bins,n_f / sum(n_f),'*'); 
+    plot(fret_bins, n_f / sum(n_f), '*'); 
     hold on;
     plot(fret_bins, N_His_f ./ sum(N_His_f), 'r');
     xlim([-0.02 1.02]);
     legend(sprintf('Peak Center = %0.3f', fret_bins(max_fret_index(1))));
 
-    % plot cross-correlation in window 5
+    % plot cross-correlation in window 4
     h4 = subplot(5, 2, [8, 10]);
     cla(h4);
     plot(d_X_a_old(1:max_cc_lag), '*b');
@@ -273,9 +370,9 @@ for current_trace = 1:number_of_traces
         N_His_fs = N_His_fs + n_fs;
         
         %%%%%%%% cross-correlation  %%%%%%%%%%%%%%%%
-        N_total_XC_old = N_total_XC_old + d_X_a_old(1:max_cc_lag);
+        %N_total_XC_old = N_total_XC_old + d_X_a_old(1:max_cc_lag);
         N_total_XC = N_total_XC + d_X_a(1:max_cc_lag);
-        N_total_XC_smooth = N_total_XC_smooth + d_X_a_smooth(1:max_cc_lag);    
+        %N_total_XC_smooth = N_total_XC_smooth + d_X_a_smooth(1:max_cc_lag);    
     end
 
 end
@@ -305,14 +402,10 @@ N_His_F_gamma = N_His_F_gamma / particle_count;
 
 % save cross-corr data
 xc_headers = ["delta-time", ...
-    "unfiltered-data", ...
-    "old-normalization", ...
-    "filtered-data"];
+              "cross-correlation"];
 
 xc_output = [timeunit*(0:max_cc_lag-1)' ...
-          N_total_XC' ...
-          N_total_XC_old' ...
-          N_total_XC_smooth'];
+          N_total_XC'];
       
 save('total_XC.dat', 'xc_output', '-ascii') ;
 
@@ -320,13 +413,14 @@ xc_output = array2table(xc_output);
 xc_output.Properties.VariableNames = xc_headers;
 writetable(xc_output, 'total_XC.csv');
 
+
 % save fret data
 fret_headers = ["fret", ...
-               "raw", ...
-               "smoothed", ...
-               "filtered-fret", ...
-               "filtered-d.a", ...
-               "gamma"] ;
+                "raw", ...
+                "smoothed", ...
+                "filtered-fret", ...
+                "filtered-d.a", ...
+                "gamma"] ;
            
 fret_output = [bins' ...
                N_His_f' ...

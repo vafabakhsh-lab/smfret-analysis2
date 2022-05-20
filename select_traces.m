@@ -2,12 +2,42 @@
 
     About
 
+The primary script used for analyzing smFRET data by manually selection
+regions of single traces to be saved for further analysis.
+
     Parameters
     ----------
+    
+    traces file:
+    .traces
+
 
     Returns
     ----------
+    
+    individual files of saved traces based on user input
 
+
+    Variables
+    ----------
+
+    file_directory:
+    location of the traces file to be analyzed and is also where the
+    individual trace files will be created
+
+    file_id:
+    integer number corresponding to the film number being analyzed
+
+    time_unit:
+    the time resolution of the movie being analyzed and is used for setting
+    axis limits
+
+    particle_positions:
+
+    film_image:
+    tiff file that corresponds to the film being analyzed that has been
+    previously loaded into matlab
+    
 
     Changelog
     ----------
@@ -19,30 +49,6 @@
 
 %{ 
 
-    Pseudocoding
-    
-    1. clean workspace
-    2. declare variables
-    3. get data directory
-    4. get data parameters
-    5. read data
-    6. for each trace in data 
-        a. calculate FRET
-        b. graph traces and iterate through
-        c. ask to save or skip
-    7. save trace
-        a. select part of trace to save
-        b. define background
-        c. write data to file
-    
-Current task: 
-    > generate a true set of test-data and not just something from my data
-    > need to some how make a dummy traces file? Or just extract the first
-    X traces!
-    > Why do the original traces start at 0 and mine start at time_unit?
-    > ALSO - IMPORTANT: Why 'for each trace..' loop when extracting data
-    and calculating fret? can I just do the array operation? isn't that
-    faster than a for loop?
 
 Possible things to add:
 - Column to keep keep track of the addition or subtraction of background
@@ -55,10 +61,13 @@ the donor, acceptor, and FRET into a current_particle table. This makes it
 easier to introduce gamma correction or other functinoality that needs to
 work on a specific trace rather than the entire acceptor data
 
-- MANUAL BACKGROUND SELECTION 
+- extract the donor and acceptor (and maybe fret) values for the current
+trace into a temporary variable and then many of the downstream functions
+wouldn't need to be passed the current_trace variable
 
-- Check and make sure that the show particle isn't constantly opening the
-image and is instead just displaying a different part of the same image.
+- switch from using if-else statements to switch-case statements?
+
+
 %}
 
 
@@ -80,49 +89,31 @@ cd(file_directory);
 
 
 % get the name of the .traces file to be analyzed
-file_id = input('index # of filename [default=1]  ', 's');
+file_id = input('index # of filename [default = 1]  ', 's');
 if isempty(file_id)
-    file_id='1';
+    file_id = '1';
 end
 file_name = ['film' file_id '.traces'] 
 
 
-time_unit = input('Time unit: [default=0.03 sec] ');
+time_unit = input('Time unit: [default = 0.03 sec] ');
 if isempty(time_unit)
     time_unit = 0.03;
 end
     
     
-leakage = input('Donor leakage correction: [default=0.085] ');
+leakage = input('Donor leakage correction: [default = 0.085] ');
 if isempty(leakage)
-  leakage=0.085;
+  leakage = 0.085;
 end
     
 
-% bg_definition_input = ...
-%     input('Manually define background? y or n [default=y] ');
-
-% if isempty(bg_definition_input)
-%     bg_definition_input = 'y';
-% end
-  
-% define_bg = true;
-% 
-% if bg_definition_input == 'n'
-%     define_bg = false;
-% end
-
 bg_subtraction_input = ...
-    input('Would you like to subtract the background? y or n [default=n] ', 's');
-
-% if isempty(bg_subtraction_input)
-%     bg_definition_input = 'y';
-% end
-
-subtract_bg = false;
-
+    input('Would you like to subtract the background? y or n [default = n] ', 's');
 if bg_subtraction_input == 'y'
     subtract_bg = true;
+else
+    subtract_bg = false;
 end
 
 
@@ -137,8 +128,10 @@ end
 acceptor = acceptor - (leakage .* donor);
 
 % calculate fret for all traces
-fret = calculate_fret(donor, acceptor, number_of_traces);
-
+%fret = calculate_fret(donor, acceptor, number_of_traces);
+fret = acceptor ./ (donor + acceptor);
+% correct for rare instance where donor = -acceptor and results in inf
+fret(isinf(fret)) = 0;
 
 % get the length of traces
 [~, trace_length] = size(donor);

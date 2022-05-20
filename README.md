@@ -13,6 +13,11 @@ From this menu, select the 'Set Path' button in the ENVIRONMENT section.
 
 It will open a new window shown below
 ![subfolder add menu](./img/add-subfolder.png)
+# Requirements
+
+This analysis suite requires at least Matlab 2020b and the Image Processing Toolbox to run properly due to its use of the readlines and viscircles functions, respectively.
+
+# Installation
 
 Select 'Add with Subfolders...' and navigate to the smfret-analysis2 folder and click select folder.
 

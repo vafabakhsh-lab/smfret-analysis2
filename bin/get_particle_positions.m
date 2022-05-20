@@ -9,14 +9,34 @@ donor and acceptor channels.
     
     Parameters
     ----------
-        
     
-    Variables
-    ----------
+    file_id:
+    integer number corresponding to the film number being analyzed
     
 
     Returns
     -----------
+    
+    particle_positions:
+    N x 4 array consisting of the x & y pixel positions of corresponding
+    particles
+    
+
+    Variables
+    ----------
+
+    file_name:
+    string value of the .pks file to be loaded
+
+    peak_file:
+    string array where each line in the file is a row in the array
+
+    temp_data:
+    the .pks file data stripped of the first 6 lines that hold 
+
+
+    Changelog
+    ----------
         
     
 %}
