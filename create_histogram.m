@@ -343,11 +343,11 @@ for current_trace = 1:number_of_traces
     % plot cross-correlation in window 4
     h4 = subplot(5, 2, [8, 10]);
     cla(h4);
-    plot(d_X_a_old(1:max_cc_lag), '*b');
+    plot(d_X_a(1:max_cc_lag), '*b');
     hold on;
-    plot(N_total_XC_old / particle_count,'r');
+    plot(N_total_XC / particle_count,'r');
     ylim([-0.6 0.2]);
-    legend(sprintf('XC magnitude = %0.3f', d_X_a_old(2)));
+    legend(sprintf('XC magnitude = %0.3f', d_X_a(2)));
       
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
